@@ -579,6 +579,5 @@ codeagent/
 ├── PLAN.md
 ├── SPEC_PROCESS.md
 ├── AGENT_LOG.md
-├── REFLECTION.md
-└── submission.jsonc
+└── REFLECTION.md
 ```
