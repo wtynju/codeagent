@@ -1,0 +1,15 @@
+{
+  "max_rounds": 20,
+  "model": "claude-sonnet-5",
+  "work_dir": ".",
+  "guardrail_rules": [
+    { "pattern": "rm\\s+-rf\\s+/", "description": "递归删除根目录", "level": "DENY" },
+    { "pattern": "rm\\s+-rf", "description": "强制删除", "level": "NEED_APPROVAL" },
+    { "pattern": "DROP\\s+(TABLE|DATABASE)", "description": "数据库删除", "level": "NEED_APPROVAL" },
+    { "pattern": ":\\\\(\\\\)\\s*\\\\{\\\\s*:\\\\|:&\\\\s*\\\\}\\\\s*;:", "description": "fork 炸弹", "level": "DENY" }
+  ],
+  "allowed_tools": ["read_file", "write_file", "execute_shell", "run_tests", "search_code", "list_files"],
+  "approval_timeout": 300,
+  "memory_enabled": true,
+  "log_level": "info"
+}
