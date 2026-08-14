@@ -6,7 +6,12 @@ import * as path from 'path';
 export function isPathInWorkspace(targetPath: string, workDir: string): boolean {
   const resolvedTarget = path.resolve(targetPath);
   const resolvedWorkDir = path.resolve(workDir);
-  return resolvedTarget.startsWith(resolvedWorkDir);
+
+  // 加尾部分隔符防止前缀误匹配（如 /home/user/project2 匹配 /home/user/project）
+  const prefix = resolvedWorkDir.endsWith(path.sep) ? resolvedWorkDir : resolvedWorkDir + path.sep;
+  const target = resolvedTarget.endsWith(path.sep) ? resolvedTarget : resolvedTarget;
+
+  return target === resolvedWorkDir || target.startsWith(prefix);
 }
 
 export function resolveSafePath(targetPath: string, workDir: string): string {

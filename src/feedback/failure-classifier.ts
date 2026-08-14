@@ -57,6 +57,24 @@ export function classifyFailure(output: string): FailureInfo[] {
           line: parseInt(lintMatch[2]),
         });
       }
+      continue;
+    }
+
+    // 运行时错误
+    if (line.match(/Error:\s/) || line.match(/Uncaught\s+/) || line.match(/Cannot find module/)) {
+      failures.push({
+        category: 'RUNTIME_ERROR',
+        message: line.trim(),
+      });
+      continue;
+    }
+
+    // 超时
+    if (line.match(/timeout/i) || line.match(/Timed?\s*out/i) || line.match(/killed/i)) {
+      failures.push({
+        category: 'TIMEOUT',
+        message: line.trim(),
+      });
     }
   }
 

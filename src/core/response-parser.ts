@@ -18,10 +18,19 @@ export function parseResponse(response: LLMResponse): ParsedResponse {
   // 检查是否包含 FINISH 标记
   const isFinished = text.includes('FINISH');
 
+  // 检测响应格式错误
+  let error: string | undefined;
+  if (response.finishReason === 'error') {
+    error = 'LLM 返回错误状态';
+  } else if (!text && toolCalls.length === 0) {
+    error = '响应为空且无工具调用';
+  }
+
   return {
     text,
     toolCalls,
     isFinished,
+    error,
   };
 }
 

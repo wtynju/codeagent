@@ -51,6 +51,17 @@ export function buildContext(input: ContextInput): Message[] {
     });
   }
 
+  // 工具列表
+  if (input.tools.length > 0) {
+    const toolDescriptions = input.tools.map(t =>
+      `- ${t.name}: ${t.description}`
+    ).join('\n');
+    messages.push({
+      role: 'system',
+      content: `可用工具：\n${toolDescriptions}`,
+    });
+  }
+
   // 用户任务
   messages.push({
     role: 'user',
