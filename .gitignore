@@ -3,3 +3,6 @@ dist/
 .env
 *.log
 coverage/
+通用要求.md
+AI4SE_Final_Project_*.md
+*.db
