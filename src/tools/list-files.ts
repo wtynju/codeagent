@@ -4,12 +4,12 @@ import { ToolResult } from './index';
 import * as fs from 'fs';
 import * as path from 'path';
 
-export async function listFiles(params: Record<string, unknown>): Promise<ToolResult> {
+export async function listFiles(params: Record<string, unknown>, workDir?: string): Promise<ToolResult> {
   const dirPath = params.path as string;
 
   if (!dirPath) return { success: false, error: '缺少参数: path' };
 
-  const resolvedPath = path.resolve(dirPath);
+  const resolvedPath = path.resolve(workDir || process.cwd(), dirPath);
 
   try {
     if (!fs.existsSync(resolvedPath)) {

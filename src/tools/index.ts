@@ -15,7 +15,7 @@ export interface ToolResult {
   exitCode?: number;
 }
 
-export type ToolFunction = (params: Record<string, unknown>) => Promise<ToolResult>;
+export type ToolFunction = (params: Record<string, unknown>, workDir?: string) => Promise<ToolResult>;
 
 export class ToolRegistry {
   private tools: Map<string, { fn: ToolFunction; definition: ToolDefinition }> = new Map();
@@ -107,13 +107,13 @@ export class ToolRegistry {
     return this.tools.has(name);
   }
 
-  async dispatch(name: string, params: Record<string, unknown>): Promise<ToolResult> {
+  async dispatch(name: string, params: Record<string, unknown>, workDir?: string): Promise<ToolResult> {
     const tool = this.tools.get(name);
     if (!tool) {
       return { success: false, error: `未知工具: ${name}` };
     }
     try {
-      return await tool.fn(params);
+      return await tool.fn(params, workDir || process.cwd());
     } catch (err) {
       return { success: false, error: `工具执行异常: ${err}` };
     }

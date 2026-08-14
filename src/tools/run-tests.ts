@@ -3,7 +3,7 @@
 import { ToolResult } from './index';
 import { execSync } from 'child_process';
 
-export async function runTests(params: Record<string, unknown>): Promise<ToolResult> {
+export async function runTests(params: Record<string, unknown>, workDir?: string): Promise<ToolResult> {
   const testCommand = (params.testCommand as string) || 'npm test';
 
   try {

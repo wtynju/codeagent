@@ -3,7 +3,7 @@
 // 所有判定逻辑都是代码实现的，不依赖 LLM
 
 import * as path from 'path';
-import { isPathInWorkspace } from './sandbox';
+import { isPathInWorkspace, isSymlinkEscape } from './sandbox';
 
 export type GuardrailDecision = 'ALLOW' | 'NEED_APPROVAL' | 'DENY';
 
@@ -85,6 +85,11 @@ export class GuardrailEngine {
     // 使用 sandbox.ts 统一路径判断，修复前缀误匹配
     if (!isPathInWorkspace(filePath, workDir)) {
       return isWrite ? 'NEED_APPROVAL' : 'ALLOW';
+    }
+
+    // 符号链接逃逸检查
+    if (isSymlinkEscape(filePath, workDir)) {
+      return 'NEED_APPROVAL';
     }
 
     // 系统路径检查

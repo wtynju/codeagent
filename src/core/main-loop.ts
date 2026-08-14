@@ -197,6 +197,7 @@ export class MainLoop {
             const result = await this.toolRegistry.dispatch(
               toolCall.name,
               toolCall.arguments,
+              workDir,
             );
 
             // 更新审计日志执行结果

@@ -3,7 +3,7 @@
 import { ToolResult } from './index';
 import { execSync } from 'child_process';
 
-export async function executeShell(params: Record<string, unknown>): Promise<ToolResult> {
+export async function executeShell(params: Record<string, unknown>, workDir?: string): Promise<ToolResult> {
   const command = params.command as string;
   const cwd = params.cwd as string | undefined;
 
@@ -11,7 +11,7 @@ export async function executeShell(params: Record<string, unknown>): Promise<Too
 
   try {
     const stdout = execSync(command, {
-      cwd: cwd || process.cwd(),
+      cwd: cwd || workDir || process.cwd(),
       timeout: 120000,
       encoding: 'utf-8',
       maxBuffer: 10 * 1024 * 1024,
