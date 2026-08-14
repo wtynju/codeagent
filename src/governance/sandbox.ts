@@ -31,7 +31,9 @@ export function isSymlinkEscape(targetPath: string, workDir: string): boolean {
     const fs = require('fs');
     const realPath = fs.realpathSync(targetPath);
     const realWorkDir = fs.realpathSync(workDir);
-    return !realPath.startsWith(realWorkDir);
+    // 统一前缀判断，修复前缀误匹配
+    const prefix = realWorkDir.endsWith(path.sep) ? realWorkDir : realWorkDir + path.sep;
+    return realPath !== realWorkDir && !realPath.startsWith(prefix);
   } catch {
     return !isPathInWorkspace(targetPath, workDir);
   }

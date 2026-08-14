@@ -4,7 +4,7 @@
 import { LLMProvider, Message, LLMResponse } from '../llm/provider';
 import { MockLLMProvider } from '../llm/mock-provider';
 import { buildContext } from './context-builder';
-import { parseResponse } from './response-parser';
+import { parseResponseWithRetry } from './response-parser';
 import { ToolRegistry } from '../tools';
 import { GuardrailEngine } from '../governance/guardrail-engine';
 import { HITLStateMachine } from '../governance/hitl-state-machine';
@@ -81,7 +81,7 @@ export class MainLoop {
         history: messages,
       });
 
-      // 2. 调用 LLM
+      // 2. 调用 LLM（带重试）
       let response: LLMResponse;
       try {
         response = await this.callLLMWithRetry(llmProvider, context);
@@ -94,8 +94,20 @@ export class MainLoop {
         };
       }
 
-      // 3. 解析响应
-      const parsed = parseResponse(response);
+      // 3. 解析响应（带格式错误重试，最多 3 次）
+      const parsed = parseResponseWithRetry(response, 3);
+
+      // 格式错误处理
+      if (parsed.error) {
+        // 重新调用 LLM 重试（已在 parseResponseWithRetry 内置重试次数）
+        // 如果仍然失败，则停机
+        return {
+          success: false,
+          rounds: round,
+          reason: `LLM 返回格式错误：${parsed.error}`,
+          messages,
+        };
+      }
 
       // 记录对话
       messages.push({
@@ -127,7 +139,7 @@ export class MainLoop {
           );
 
           // 审计日志
-          this.auditLogger.log({
+          const auditId = this.auditLogger.log({
             sessionId,
             toolName: toolCall.name,
             toolParams: JSON.stringify(toolCall.arguments),
@@ -135,6 +147,7 @@ export class MainLoop {
           });
 
           if (decision === 'DENY') {
+            this.auditLogger.updateExecution(auditId, 'DENIED', 'skipped', '操作被拒绝');
             messages.push({
               role: 'tool',
               content: `操作被拒绝：${toolCall.name}`,
@@ -158,6 +171,7 @@ export class MainLoop {
               this.hitl.approve();
             } else {
               this.hitl.deny();
+              this.auditLogger.updateExecution(auditId, 'DENIED', 'skipped', '审批未通过');
               messages.push({
                 role: 'tool',
                 content: `操作被拒绝（审批未通过）：${toolCall.name}`,
@@ -171,6 +185,14 @@ export class MainLoop {
             const result = await this.toolRegistry.dispatch(
               toolCall.name,
               toolCall.arguments,
+            );
+
+            // 更新审计日志执行结果
+            this.auditLogger.updateExecution(
+              auditId,
+              'APPROVED',
+              result.success ? 'success' : 'failed',
+              result.error,
             );
 
             // 5c. 反馈解析
@@ -189,6 +211,7 @@ export class MainLoop {
               });
             }
           } catch (err) {
+            this.auditLogger.updateExecution(auditId, 'APPROVED', 'failed', String(err));
             messages.push({
               role: 'tool',
               content: `工具执行失败：${err}`,
@@ -197,12 +220,22 @@ export class MainLoop {
         }
       } else {
         consecutiveNoToolCalls++;
-        // 连续 3 轮无工具调用，停机
+        // 连续 3 轮无工具调用，询问用户是否继续
         if (consecutiveNoToolCalls >= 3) {
+          if (onApprovalNeeded) {
+            const shouldContinue = await onApprovalNeeded(
+              'continue',
+              '连续3轮无工具调用，是否继续等待？'
+            );
+            if (shouldContinue) {
+              consecutiveNoToolCalls = 0;
+              continue;
+            }
+          }
           return {
             success: false,
             rounds: round,
-            reason: '连续 3 轮无工具调用且无 FINISH 标记',
+            reason: '连续 3 轮无工具调用，用户选择终止',
             messages,
           };
         }

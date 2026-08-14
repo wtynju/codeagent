@@ -3,6 +3,7 @@
 // 所有判定逻辑都是代码实现的，不依赖 LLM
 
 import * as path from 'path';
+import { isPathInWorkspace } from './sandbox';
 
 export type GuardrailDecision = 'ALLOW' | 'NEED_APPROVAL' | 'DENY';
 
@@ -81,20 +82,20 @@ export class GuardrailEngine {
   }
 
   private checkPath(filePath: string, workDir: string, isWrite: boolean): GuardrailDecision {
-    const resolved = path.resolve(filePath);
-    const normalizedWorkDir = path.resolve(workDir);
-
-    if (!resolved.startsWith(normalizedWorkDir)) {
+    // 使用 sandbox.ts 统一路径判断，修复前缀误匹配
+    if (!isPathInWorkspace(filePath, workDir)) {
       return isWrite ? 'NEED_APPROVAL' : 'ALLOW';
     }
 
+    // 系统路径检查
+    const resolved = path.resolve(filePath);
     const systemPaths = [
       '/etc', '/usr', '/bin', '/sbin', '/boot', '/dev', '/proc', '/sys',
       'C:\\Windows', 'C:\\Program Files', 'C:\\Program Files (x86)',
     ];
 
     for (const sysPath of systemPaths) {
-      if (resolved.startsWith(path.resolve(sysPath))) {
+      if (resolved.startsWith(path.resolve(sysPath) + path.sep)) {
         return 'NEED_APPROVAL';
       }
     }

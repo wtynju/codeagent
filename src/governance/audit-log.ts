@@ -39,12 +39,12 @@ export class AuditLogger {
     `);
   }
 
-  log(entry: AuditEntry): void {
+  log(entry: AuditEntry): number {
     const stmt = this.db.prepare(`
       INSERT INTO audit_log (session_id, tool_name, tool_params, guardrail_decision, approval_result, execution_result, error)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
-    stmt.run(
+    const result = stmt.run(
       entry.sessionId,
       entry.toolName,
       this.sanitize(entry.toolParams),
@@ -53,6 +53,13 @@ export class AuditLogger {
       entry.executionResult || null,
       entry.error || null,
     );
+    return result.lastInsertRowid as number;
+  }
+
+  // 更新最后一条记录的审批结果和执行结果
+  updateExecution(id: number, approvalResult: string, executionResult: string, error?: string): void {
+    this.db.prepare('UPDATE audit_log SET approval_result = ?, execution_result = ?, error = ? WHERE id = ?')
+      .run(approvalResult, executionResult, error || null, id);
   }
 
   getBySession(sessionId: string): AuditEntry[] {
