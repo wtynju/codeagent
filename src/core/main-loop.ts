@@ -124,11 +124,11 @@ export class MainLoop {
       // 记录对话
       messages.push({
         role: 'assistant',
-        content: parsed.text,
+        content: parsed!.text,
       });
 
       // 4. 检查是否 FINISH
-      if (parsed.isFinished) {
+      if (parsed!.isFinished) {
         onRound?.(round, 'completed');
         return {
           success: true,
@@ -139,10 +139,10 @@ export class MainLoop {
       }
 
       // 5. 处理工具调用
-      if (parsed.toolCalls.length > 0) {
+      if (parsed!.toolCalls.length > 0) {
         consecutiveNoToolCalls = 0;
 
-        for (const toolCall of parsed.toolCalls) {
+        for (const toolCall of parsed!.toolCalls) {
           // 5a. 护栏检查
           const decision = this.guardrail.check(
             toolCall.name,
