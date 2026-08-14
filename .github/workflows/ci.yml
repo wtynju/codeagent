@@ -14,7 +14,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm ci
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libsecret-1-dev libsqlite3-dev
+      - run: npm install
       - run: npm test
         env:
           CI: true
@@ -27,7 +29,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm ci
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libsecret-1-dev libsqlite3-dev
+      - run: npm install
       - run: npm run build
       - uses: actions/upload-artifact@v4
         with:
