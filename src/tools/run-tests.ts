@@ -8,7 +8,7 @@ export async function runTests(params: Record<string, unknown>, workDir?: string
 
   try {
     const stdout = execSync(testCommand, {
-      cwd: process.cwd(),
+      cwd: workDir || process.cwd(),
       timeout: 300000,
       encoding: 'utf-8',
       maxBuffer: 10 * 1024 * 1024,
