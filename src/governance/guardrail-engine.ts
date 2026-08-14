@@ -54,8 +54,8 @@ export class GuardrailEngine {
       }
     }
 
-    // 2. 文件路径边界检查（read_file、write_file）
-    if (toolName === 'read_file' || toolName === 'write_file') {
+    // 2. 文件路径边界检查（所有文件操作工具）
+    if (['read_file', 'write_file', 'list_files', 'search_code'].includes(toolName)) {
       const filePath = params.path as string;
       if (filePath) {
         const decision = this.checkPath(filePath, workDir, toolName === 'write_file');
