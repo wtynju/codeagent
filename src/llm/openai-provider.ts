@@ -20,7 +20,7 @@ export class OpenAIProvider implements LLMProvider {
         role: m.role === 'tool' ? 'tool' : m.role,
         content: m.content,
         tool_call_id: m.toolCallId,
-      })),
+      })) as any,
       tools: options?.tools?.map(t => ({
         type: 'function' as const,
         function: {

@@ -28,7 +28,7 @@ export class AnthropicProvider implements LLMProvider {
         name: t.name,
         description: t.description,
         input_schema: t.inputSchema,
-      })),
+      })) as any,
     });
 
     return {
