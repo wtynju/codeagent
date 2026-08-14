@@ -81,30 +81,42 @@ export class MainLoop {
         history: messages,
       });
 
-      // 2. 调用 LLM（带重试）
-      let response: LLMResponse;
-      try {
-        response = await this.callLLMWithRetry(llmProvider, context);
-      } catch (err) {
-        return {
-          success: false,
-          rounds: round,
-          reason: `LLM 调用失败：${err}`,
-          messages,
-        };
+      // 2. 调用 LLM（带格式错误重试，最多 3 次）
+      let response: LLMResponse | null = null;
+      let parsed = null;
+      const maxRetries = 3;
+
+      for (let retry = 0; retry < maxRetries; retry++) {
+        try {
+          response = await this.callLLMWithRetry(llmProvider, context);
+        } catch (err) {
+          return {
+            success: false,
+            rounds: round,
+            reason: `LLM 调用失败：${err}`,
+            messages,
+          };
+        }
+
+        // 3. 解析响应
+        parsed = parseResponseWithRetry(response, 1);
+
+        if (!parsed.error) {
+          break; // 解析成功，跳出重试循环
+        }
+
+        // 格式错误，下一轮重新调用 LLM
+        if (retry < maxRetries - 1) {
+          onRound?.(round, `格式错误，重试 ${retry + 2}/${maxRetries}...`);
+        }
       }
 
-      // 3. 解析响应（带格式错误重试，最多 3 次）
-      const parsed = parseResponseWithRetry(response, 3);
-
-      // 格式错误处理
-      if (parsed.error) {
-        // 重新调用 LLM 重试（已在 parseResponseWithRetry 内置重试次数）
-        // 如果仍然失败，则停机
+      // 格式错误处理：重试耗尽仍失败
+      if (parsed!.error) {
         return {
           success: false,
           rounds: round,
-          reason: `LLM 返回格式错误：${parsed.error}`,
+          reason: `LLM 返回格式错误（已重试 ${maxRetries} 次）：${parsed!.error}`,
           messages,
         };
       }
