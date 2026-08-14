@@ -19,7 +19,7 @@ export class GuardrailEngine {
   constructor(customRules?: GuardrailRule[]) {
     this.rules = [
       // 绝对不能执行的命令
-      { pattern: /rm\s+-rf\s+\/\s*$/, description: '递归删除根目录', level: 'DENY' },
+      { pattern: /rm\s+-rf\s+\/(\*|\.)?\s*$/, description: '递归删除根目录', level: 'DENY' },
       { pattern: /:\(\)\s*\{\s*:\|\:\&\s*\}\s*;:/, description: 'fork 炸弹', level: 'DENY' },
       { pattern: />\s*\/dev\/sda/, description: '覆写磁盘设备', level: 'DENY' },
       { pattern: /mkfs\./, description: '格式化文件系统', level: 'DENY' },
