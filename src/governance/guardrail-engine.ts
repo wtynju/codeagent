@@ -68,7 +68,7 @@ export class GuardrailEngine {
 
     // 3. execute_shell 的 cwd 路径检查
     if (toolName === 'execute_shell' && params.cwd) {
-      const decision = this.checkPath(params.cwd as string, workDir, false);
+      const decision = this.checkPath(params.cwd as string, workDir, true);
       if (decision !== 'ALLOW') return decision;
     }
 
