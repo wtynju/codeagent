@@ -51,6 +51,24 @@
 2. 冷启动 agent 停下来提问的行为是正确的——它没有凭猜测继续，而是等待补充信息。这说明 SPEC 在"接口边界"的定义上还需要更清晰。
 3. 这个案例也说明，冷启动验证的价值在于发现"你以为写清楚了，但换个上下文就不够"的地方。如果当时在 SPEC 中把 Message、ToolCall 等类型也完整定义，冷启动 agent 就不会卡在这里。
 
+### 第二轮验证：方案 A 代码审查
+
+把 GitHub 仓库地址发给冷启动 agent 后，它对照 SPEC 和实际代码做了逐项审查，发现了以下问题：
+
+**严重问题：**
+- `src/config/config-loader.ts` 缺失：SPEC 和 PLAN 都要求这个文件，但仓库里只有 `default-config.ts`。其他代码（MainLoop、CLI）引用了 `config-loader`，导致编译失败。
+
+**安全问题：**
+- 沙箱路径判断使用 `startsWith()`，存在前缀误匹配：`/home/user/project2` 会被误判为在 `/home/user/project` 范围内。
+
+**实现偏差：**
+- `parseResponse` 没有检测格式错误，重试机制实际上无法触发
+- `buildContext` 接收了 tools 参数但没有加入 messages
+- 失败分类器缺少 RUNTIME_ERROR 和 TIMEOUT 的显式检测
+
+**处理方式：**
+以上问题均已修复并提交（commit 3c18f28）。代码和 SPEC 现在一致。
+
 ## AI 提的建议和我采纳的
 
 - AI 建议用 TypeScript 而非 Python：采纳，因为全栈一致性更好
