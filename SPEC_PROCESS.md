@@ -69,6 +69,27 @@
 **处理方式：**
 以上问题均已修复并提交（commit 3c18f28）。代码和 SPEC 现在一致。
 
+### 第三轮验证：CI 修复与回归
+
+在修复代码后，CI 仍然报错，发现是项目配置问题而非代码问题：
+
+- `jest.config.ts` 需要 `ts-node` 才能解析，改为 `jest.config.js` 解决
+- 缺少 `@types/jest` 导致 `describe`、`it`、`expect` 找不到
+- 缺少 `@types/better-sqlite3` 导致类型声明错误
+- `rm -rf /` 正则太宽，误匹配了 `rm -rf /tmp`
+- LLM 格式错误重试只是重复解析同一个 response，没有真正重新调用 LLM
+
+以上问题均已修复，CI 全绿（commit 83e0a55）。
+
+### 第四轮验证：最终审查
+
+CI 全绿后，冷启动 AI 做了最后一轮全面审查，发现了一个之前遗漏的安全问题：
+
+- 护栏只检查了 `read_file` 和 `write_file` 的路径边界，但 `list_files` 和 `search_code` 没有纳入检查。这导致 agent 可以列出和搜索工作目录外的文件。
+- 修复方式：将 `list_files` 和 `search_code` 也加入护栏的路径检查列表（commit 93e7ee5）。
+
+冷启动 AI 最终确认：之前所有修复项全部通过，LLM 格式错误重试已真正重新调用 LLM，PLAN.md 全部标记完成。两个 API 设计偏差（options 可选、getHistory 返回类型）判定为合理设计，无需修改。
+
 ## AI 提的建议和我采纳的
 
 - AI 建议用 TypeScript 而非 Python：采纳，因为全栈一致性更好
